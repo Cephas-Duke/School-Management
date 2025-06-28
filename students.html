@@ -225,35 +225,48 @@
       "Grade 4", "Grade 5", "Grade 6"
     ];
 
-    // Add the sendSMS function
+    // Status message function to match receipts.html
+    function showStatus(message, type = 'info') {
+      const statusMessage = document.getElementById("statusMessage");
+      if (statusMessage) {
+        statusMessage.innerHTML = `<div class="${type}">${message}</div>`;
+        setTimeout(() => {
+          statusMessage.innerHTML = '';
+        }, 5000);
+      } else {
+        // Fallback to alert if no status message element
+        alert(message);
+      }
+    }
+
+    // SMS function compatible with receipts.html server endpoint
     async function sendSMS(phone, message) {
-      const apiKey = 'YOUR_CELCOMAFRICA_API_KEY'; // Replace with your actual API key
-      const url = 'https://api.celcomafrica.com/version1/messaging'; // Confirm exact endpoint with CelcomAfrica
-
-      const payload = {
-        to: phone,
-        message: message,
-        from: 'YOUR_SENDER_ID' // Replace with your registered sender ID
-      };
-
       try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'apiKey': apiKey
-          },
-          body: new URLSearchParams(payload)
+        const response = await fetch("/send-sms", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: phone,
+            message: message
+          })
         });
-        const data = await response.json();
-        console.log('SMS sent:', data);
+
+        const result = await response.json();
+        if (result.success) {
+          console.log('SMS sent successfully to', phone);
+          return true;
+        } else {
+          console.error('SMS failed:', result.error);
+          return false;
+        }
       } catch (error) {
         console.error('SMS Error:', error);
+        return false;
       }
     }
 
     function loadStudents() {
+      // Use the same localStorage key as receipts.html
       const students = JSON.parse(localStorage.getItem('students')) || [];
       groupedTables.innerHTML = '';
 
@@ -280,6 +293,7 @@
           <thead>
             <tr>
               <th>Name</th>
+              <th>Phone</th>
               <th>Tuition</th>
               <th>Adm</th>
               <th>Books</th>
@@ -303,18 +317,19 @@
           const row = document.createElement('tr');
           row.innerHTML = `
             <td><a href="#" onclick="viewStudent(${realIndex})">${s.name}</a></td>
-            <td>${s.tuition}</td>
-            <td>${s.adm}</td>
-            <td>${s.books}</td>
-            <td>${s.stationery}</td>
-            <td>${s.uniform}</td>
-            <td>${s.lunch}</td>
-            <td>${s.transport}</td>
-            <td>KES ${s.total.toFixed(2)}</td>
-            <td>KES ${s.paid.toFixed(2)}</td>
-            <td>KES ${s.balance.toFixed(2)}</td>
+            <td>${s.phone || 'N/A'}</td>
+            <td>KES ${s.tuition.toFixed(2)}</td>
+            <td>KES ${s.adm.toFixed(2)}</td>
+            <td>KES ${s.books.toFixed(2)}</td>
+            <td>KES ${s.stationery.toFixed(2)}</td>
+            <td>KES ${s.uniform.toFixed(2)}</td>
+            <td>KES ${s.lunch.toFixed(2)}</td>
+            <td>KES ${s.transport.toFixed(2)}</td>
+            <td><strong>KES ${s.total.toFixed(2)}</strong></td>
+            <td style="color: green;"><strong>KES ${s.paid.toFixed(2)}</strong></td>
+            <td style="color: ${s.balance > 0 ? 'red' : 'green'};"><strong>KES ${s.balance.toFixed(2)}</strong></td>
             <td>
-              <button onclick="editStudent(${realIndex})">Edit</button>
+              <button onclick="editStudent(${realIndex})" style="margin-right: 5px;">Edit</button>
               <button onclick="deleteStudent(${realIndex})" style="background:red;color:white;">Delete</button>
             </td>
           `;
@@ -324,6 +339,41 @@
         section.appendChild(table);
         groupedTables.appendChild(section);
       });
+
+      // Update summary statistics
+      updateSummaryStats(students);
+    }
+
+    function updateSummaryStats(students) {
+      const totalStudents = students.length;
+      const totalFees = students.reduce((sum, s) => sum + s.total, 0);
+      const totalPaid = students.reduce((sum, s) => sum + s.paid, 0);
+      const totalBalance = students.reduce((sum, s) => sum + s.balance, 0);
+
+      // Update summary if elements exist
+      const summaryElement = document.getElementById('summaryStats');
+      if (summaryElement) {
+        summaryElement.innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-item">
+              <h4>Total Students</h4>
+              <p>${totalStudents}</p>
+            </div>
+            <div class="stat-item">
+              <h4>Total Fees</h4>
+              <p>KES ${totalFees.toFixed(2)}</p>
+            </div>
+            <div class="stat-item">
+              <h4>Total Paid</h4>
+              <p style="color: green;">KES ${totalPaid.toFixed(2)}</p>
+            </div>
+            <div class="stat-item">
+              <h4>Total Balance</h4>
+              <p style="color: red;">KES ${totalBalance.toFixed(2)}</p>
+            </div>
+          </div>
+        `;
+      }
     }
 
     function editStudent(index) {
@@ -331,6 +381,7 @@
       const s = students[index];
       editingIndex = index;
 
+      // Use the same field names as receipts.html for consistency
       document.getElementById('studentName').value = s.name;
       document.getElementById('studentClass').value = s.class;
       document.getElementById('phone').value = s.phone || '';
@@ -344,24 +395,28 @@
       document.getElementById('paid').value = s.paid;
 
       form.querySelector('button[type="submit"]').textContent = "Save Changes";
+      showStatus(`Editing student: ${s.name}`, "info");
     }
 
     function deleteStudent(index) {
       const students = JSON.parse(localStorage.getItem('students')) || [];
-      if (confirm(`Delete ${students[index].name}?`)) {
+      const studentName = students[index].name;
+      
+      if (confirm(`Are you sure you want to delete ${studentName}? This action cannot be undone.`)) {
         students.splice(index, 1);
         localStorage.setItem('students', JSON.stringify(students));
         loadStudents();
+        showStatus(`Student ${studentName} deleted successfully`, "success");
       }
     }
 
-    // Update the form submission
-    form.addEventListener('submit', function(e) {
+    // Updated form submission to match receipts.html structure exactly
+    form.addEventListener('submit', async function(e) {
       e.preventDefault();
 
-      const name = document.getElementById('studentName').value;
-      const studentClass = document.getElementById('studentClass').value;
-      const phone = document.getElementById('phone').value;
+      const name = document.getElementById('studentName').value.trim();
+      const studentClass = document.getElementById('studentClass').value.trim();
+      const phone = document.getElementById('phone').value.trim();
       const tuition = parseFloat(document.getElementById('tuition').value) || 0;
       const adm = parseFloat(document.getElementById('adm').value) || 0;
       const books = parseFloat(document.getElementById('books').value) || 0;
@@ -371,45 +426,99 @@
       const transport = parseFloat(document.getElementById('transport').value) || 0;
       const paid = parseFloat(document.getElementById('paid').value) || 0;
 
+      // Validation
+      if (!name || !studentClass || !phone) {
+        showStatus("Please fill in all required fields (Name, Class, Phone)", "error");
+        return;
+      }
+
       const total = tuition + adm + books + stationery + uniform + lunch + transport;
       const balance = total - paid;
 
-      const student = { name, class: studentClass, phone, tuition, adm, books, stationery, uniform, lunch, transport, total, paid, balance };
+      // Create student object with exact same structure as receipts.html
+      const student = { 
+        name, 
+        class: studentClass, 
+        phone, 
+        tuition, 
+        adm, 
+        books, 
+        stationery, 
+        uniform, 
+        lunch, 
+        transport, 
+        total, 
+        paid, 
+        balance 
+      };
 
       const students = JSON.parse(localStorage.getItem('students')) || [];
 
       if (editingIndex !== null) {
+        // Editing existing student
+        const oldBalance = students[editingIndex].balance;
         students[editingIndex] = student;
         editingIndex = null;
         form.querySelector('button[type="submit"]').textContent = "Add Student";
+        
+        // Send SMS if balance changed significantly
+        if (Math.abs(balance - oldBalance) > 0) {
+          const smsMessage = `Dear parent to ${name}, your account has been updated. Total Fee: KES ${total}, Paid: KES ${paid}, Balance: KES ${balance}. - Heriwadi Christian Schools`;
+          const smsSent = await sendSMS(phone, smsMessage);
+          if (smsSent) {
+            showStatus(`Student ${name} updated and SMS sent successfully!`, "success");
+          } else {
+            showStatus(`Student ${name} updated but SMS failed to send`, "error");
+          }
+        } else {
+          showStatus(`Student ${name} updated successfully!`, "success");
+        }
       } else {
+        // Adding new student
         students.push(student);
-        // Send SMS for new student
-        sendSMS(phone, `Hello ${name}, you have been registered at Heriwadi Christian Schools. Total Fee: KES ${total}, Paid: KES ${paid}, Balance: KES ${balance}.`);
+        
+        // Send welcome SMS for new student
+        const welcomeMessage = `Welcome ${name} to Heriwadi Christian Schools! Total Fee: KES ${total}, Paid: KES ${paid}, Balance: KES ${balance}. Thank you - Heriwadi Christian Schools`;
+        const smsSent = await sendSMS(phone, welcomeMessage);
+        
+        if (smsSent) {
+          showStatus(`Student ${name} added and welcome SMS sent successfully!`, "success");
+        } else {
+          showStatus(`Student ${name} added but SMS failed to send`, "error");
+        }
       }
 
+      // Save to localStorage (same key as receipts.html)
       localStorage.setItem('students', JSON.stringify(students));
       form.reset();
       loadStudents();
     });
 
+    // Search and filter event listeners
     document.getElementById('searchInput').addEventListener('input', loadStudents);
     document.getElementById('classFilter').addEventListener('change', loadStudents);
 
-    loadStudents();
+    // Excel export function
     function exportToExcel() {
       const students = JSON.parse(localStorage.getItem('students')) || [];
       if (students.length === 0) {
-        alert("No student data available to export.");
+        showStatus("No student data available to export.", "error");
         return;
       }
 
-      const worksheet = XLSX.utils.json_to_sheet(students);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+      try {
+        const worksheet = XLSX.utils.json_to_sheet(students);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
 
-      XLSX.writeFile(workbook, "students_report.xlsx");
+        XLSX.writeFile(workbook, `students_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        showStatus("Students data exported to Excel successfully!", "success");
+      } catch (error) {
+        showStatus("Error exporting to Excel: " + error.message, "error");
+      }
     }
+
+    // View student modal function
     function viewStudent(index) {
       const students = JSON.parse(localStorage.getItem('students')) || [];
       const s = students[index];
@@ -418,18 +527,35 @@
       const content = document.getElementById('modalContent');
 
       content.innerHTML = `
-        <p><strong>Name:</strong> ${s.name}</p>
-        <p><strong>Class:</strong> ${s.class}</p>
-        <p><strong>Tuition:</strong> KES ${s.tuition}</p>
-        <p><strong>Adm Fee:</strong> KES ${s.adm}</p>
-        <p><strong>Book Fund:</strong> KES ${s.books}</p>
-        <p><strong>Stationery:</strong> KES ${s.stationery}</p>
-        <p><strong>Uniform:</strong> KES ${s.uniform}</p>
-        <p><strong>Lunch:</strong> KES ${s.lunch}</p>
-        <p><strong>Transport:</strong> KES ${s.transport}</p>
-        <p><strong>Total Fee:</strong> <strong style="color:blue">KES ${s.total}</strong></p>
-        <p><strong>Amount Paid:</strong> <strong style="color:green">KES ${s.paid}</strong></p>
-        <p><strong>Balance:</strong> <strong style="color:red">KES ${s.balance}</strong></p>
+        <div style="padding: 20px;">
+          <h3 style="color: #333; margin-bottom: 20px; text-align: center;">${s.name} - ${s.class}</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+              <p><strong>Name:</strong> ${s.name}</p>
+              <p><strong>Class:</strong> ${s.class}</p>
+              <p><strong>Phone:</strong> ${s.phone || 'N/A'}</p>
+              <p><strong>Tuition:</strong> KES ${s.tuition.toFixed(2)}</p>
+              <p><strong>Admission Fee:</strong> KES ${s.adm.toFixed(2)}</p>
+              <p><strong>Book Fund:</strong> KES ${s.books.toFixed(2)}</p>
+            </div>
+            <div>
+              <p><strong>Stationery:</strong> KES ${s.stationery.toFixed(2)}</p>
+              <p><strong>Uniform:</strong> KES ${s.uniform.toFixed(2)}</p>
+              <p><strong>Lunch:</strong> KES ${s.lunch.toFixed(2)}</p>
+              <p><strong>Transport:</strong> KES ${s.transport.toFixed(2)}</p>
+            </div>
+          </div>
+          <hr style="margin: 20px 0;">
+          <div style="text-align: center; font-size: 16px;">
+            <p><strong>Total Fee:</strong> <span style="color:blue; font-size: 18px;">KES ${s.total.toFixed(2)}</span></p>
+            <p><strong>Amount Paid:</strong> <span style="color:green; font-size: 18px;">KES ${s.paid.toFixed(2)}</span></p>
+            <p><strong>Balance:</strong> <span style="color:${s.balance > 0 ? 'red' : 'green'}; font-size: 20px; font-weight: bold;">KES ${s.balance.toFixed(2)}</span></p>
+          </div>
+          <div style="text-align: center; margin-top: 20px;">
+            <button onclick="editStudent(${index}); closeModal();" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-right: 10px;">Edit Student</button>
+            <button onclick="closeModal()" style="background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 5px;">Close</button>
+          </div>
+        </div>
       `;
 
       modal.style.display = "flex";
@@ -438,6 +564,107 @@
     function closeModal() {
       document.getElementById('studentModal').style.display = "none";
     }
-  </script>
-</body>
-</html>
+
+    // Bulk operations
+    function clearAllStudents() {
+      if (confirm("Are you sure you want to delete ALL students? This action cannot be undone!")) {
+        if (confirm("This will permanently delete all student records. Are you absolutely sure?")) {
+          localStorage.removeItem('students');
+          loadStudents();
+          showStatus("All student records have been cleared", "success");
+        }
+      }
+    }
+
+    // Import from JSON
+    function importStudents() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              const importedStudents = JSON.parse(e.target.result);
+              if (Array.isArray(importedStudents)) {
+                localStorage.setItem('students', JSON.stringify(importedStudents));
+                loadStudents();
+                showStatus(`Successfully imported ${importedStudents.length} students`, "success");
+              } else {
+                showStatus("Invalid file format. Please select a valid JSON file.", "error");
+              }
+            } catch (error) {
+              showStatus("Error reading file: " + error.message, "error");
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+      input.click();
+    }
+
+    // Export to JSON
+    function exportStudentsJSON() {
+      const students = JSON.parse(localStorage.getItem('students')) || [];
+      if (students.length === 0) {
+        showStatus("No student data to export", "error");
+        return;
+      }
+
+      const dataStr = JSON.stringify(students, null, 2);
+      const dataBlob = new Blob([dataStr], {type: 'application/json'});
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `students_backup_${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      showStatus("Students data exported to JSON successfully!", "success");
+    }
+
+    // Initialize the page
+    loadStudents();
+
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit'));
+      }
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // Auto-save draft while typing (optional feature)
+    let autoSaveTimeout;
+    form.addEventListener('input', function() {
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = setTimeout(function() {
+        const formData = new FormData(form);
+        const draft = Object.fromEntries(formData);
+        localStorage.setItem('studentFormDraft', JSON.stringify(draft));
+      }, 2000);
+    });
+
+    // Load draft on page load
+    window.addEventListener('load', function() {
+      const draft = localStorage.getItem('studentFormDraft');
+      if (draft && editingIndex === null) {
+        const draftData = JSON.parse(draft);
+        Object.keys(draftData).forEach(key => {
+          const element = document.getElementById(key);
+          if (element && draftData[key]) {
+            element.value = draftData[key];
+          }
+        });
+      }
+    });
+
+    // Clear draft when form is submitted
+    form.addEventListener('submit', function() {
+      localStorage.removeItem('studentFormDraft');
+    });
+</script>
