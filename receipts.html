@@ -103,7 +103,7 @@
     </div>
   </div>
    <script>
-    let students = JSON.parse(localStorage.getItem("schoolStudents")) || [];
+    let students = JSON.parse(localStorage.getItem("students")) || [];
     let receipts = JSON.parse(localStorage.getItem("receipts")) || [];
 
     const studentSelect = document.getElementById("studentSelect");
@@ -204,7 +204,7 @@
         localStorage.setItem("receipts", JSON.stringify(receipts));
 
         // Send SMS using the server endpoint
-        const smsResponse = await fetch("https://school-management-z40w.onrender.com", {
+        const smsResponse = await fetch("/send-sms", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -774,4 +774,3 @@
   </script>
 </body>
 </html>
-
