@@ -85,19 +85,19 @@
     <div style="background:#fff; padding:20px; border-radius:10px; width:90%; max-width:600px; position:relative; max-height:90vh; overflow-y:auto;">
       <span onclick="closeStudentManager()" style="position:absolute; top:10px; right:20px; font-size:18px; cursor:pointer;">&times;</span>
       <h3>Add New Student</h3>
-      <form id="studentForm">
-        <label>Name:</label><input type="text" id="studentName" required>
-        <label>Class:</label><input type="text" id="studentClassInput" required>
-        <label>Phone:</label><input type="text" id="studentPhone" required>
-        <label>Tuition:</label><input type="number" id="tuitionInput" value="0">
-        <label>Adm Fee:</label><input type="number" id="admInput" value="0">
-        <label>Book Fund:</label><input type="number" id="booksInput" value="0">
-        <label>Stationery:</label><input type="number" id="stationeryInput" value="0">
-        <label>Uniform:</label><input type="number" id="uniformInput" value="0">
-        <label>Lunch:</label><input type="number" id="lunchInput" value="0">
-        <label>Transport:</label><input type="number" id="transportInput" value="0">
-        <button type="submit">Add Student</button>
-      </form>
+   <form id="studentForm">
+     <label>Name:</label><input type="text" id="studentName" required>
+     <label>Class:</label><input type="text" id="studentClass" required>  <!-- Changed from studentClassInput -->
+     <label>Phone:</label><input type="text" id="phone" required>  <!-- Changed from studentPhone -->
+     <label>Tuition:</label><input type="number" id="tuition" value="0">  <!-- Changed from tuitionInput -->
+     <label>Adm Fee:</label><input type="number" id="adm" value="0">  <!-- Changed from admInput -->
+     <label>Book Fund:</label><input type="number" id="books" value="0">  <!-- Changed from booksInput -->
+     <label>Stationery:</label><input type="number" id="stationery" value="0">  <!-- Changed from stationeryInput -->
+     <label>Uniform:</label><input type="number" id="uniform" value="0">  <!-- Changed from uniformInput -->
+     <label>Lunch:</label><input type="number" id="lunch" value="0">  <!-- Changed from lunchInput -->
+     <label>Transport:</label><input type="number" id="transport" value="0">  <!-- Changed from transportInput -->
+     <button type="submit">Add Student</button>
+   </form>
       <hr>
       <ul id="studentList"></ul>
     </div>
@@ -246,49 +246,51 @@
       document.getElementById("studentManagerModal").style.display = "none";
     }
 
-    document.getElementById("studentForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      
-      const name = document.getElementById("studentName").value.trim();
-      const sclass = document.getElementById("studentClassInput").value.trim();
-      const phone = document.getElementById("studentPhone").value.trim();
-      const tuition = +document.getElementById("tuitionInput").value;
-      const adm = +document.getElementById("admInput").value;
-      const books = +document.getElementById("booksInput").value;
-      const stationery = +document.getElementById("stationeryInput").value;
-      const uniform = +document.getElementById("uniformInput").value;
-      const lunch = +document.getElementById("lunchInput").value;
-      const transport = +document.getElementById("transportInput").value;
-      
-      if (!name || !sclass || !phone) {
-        alert("Please fill in all required fields (Name, Class, Phone)");
-        return;
-      }
+    // Replace the student form submission JavaScript in receipts.html with this:
 
-      const total = tuition + adm + books + stationery + uniform + lunch + transport;
-      const newStudent = { 
-        name, 
-        class: sclass, 
-        phone, 
-        tuition, 
-        adm, 
-        books, 
-        stationery, 
-        uniform, 
-        lunch, 
-        transport, 
-        total, 
-        paid: 0, 
-        balance: total 
-      };
-      
-      students.push(newStudent);
-      localStorage.setItem("students", JSON.stringify(students));
-      this.reset();
-      renderStudentList();
-      populateStudents();
-      showStatus(`Student ${name} added successfully!`, "success");
-    });
+document.getElementById("studentForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  
+  const name = document.getElementById("studentName").value.trim();
+  const sclass = document.getElementById("studentClass").value.trim(); // Changed from studentClassInput
+  const phone = document.getElementById("phone").value.trim(); // Changed from studentPhone
+  const tuition = +document.getElementById("tuition").value; // Changed from tuitionInput
+  const adm = +document.getElementById("adm").value; // Changed from admInput
+  const books = +document.getElementById("books").value; // Changed from booksInput
+  const stationery = +document.getElementById("stationery").value; // Changed from stationeryInput
+  const uniform = +document.getElementById("uniform").value; // Changed from uniformInput
+  const lunch = +document.getElementById("lunch").value; // Changed from lunchInput
+  const transport = +document.getElementById("transport").value; // Changed from transportInput
+  
+  if (!name || !sclass || !phone) {
+    alert("Please fill in all required fields (Name, Class, Phone)");
+    return;
+  }
+
+  const total = tuition + adm + books + stationery + uniform + lunch + transport;
+  const newStudent = { 
+    name, 
+    class: sclass, 
+    phone, 
+    tuition, 
+    adm, 
+    books, 
+    stationery, 
+    uniform, 
+    lunch, 
+    transport, 
+    total, 
+    paid: 0, 
+    balance: total 
+  };
+  
+  students.push(newStudent);
+  localStorage.setItem("students", JSON.stringify(students));
+  this.reset();
+  renderStudentList();
+  populateStudents();
+  showStatus(`Student ${name} added successfully!`, "success");
+});
 
     function renderStudentList() {
       const list = document.getElementById("studentList");
