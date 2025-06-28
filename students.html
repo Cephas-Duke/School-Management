@@ -1,187 +1,443 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Payroll Module</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Students | School Office Management System</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-    header { background-color: #0074D9; color: white; padding: 1em 0; text-align: center; }
-    nav { background: #005fa3; display: flex; justify-content: center; padding: 0.5em 0; flex-wrap: wrap; }
-    nav a { color: white; text-decoration: none; margin: 5px 15px; font-weight: bold; }
-    .container { padding: 20px; }
-    table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    th { background-color: #0074D9; color: white; }
-    input[type="number"] {
-      width: 80px;
-      padding: 5px;
-      border: 1px solid #ccc;
-      text-align: right;
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
     }
-    button { padding: 5px 10px; cursor: pointer; margin: 5px 0; }
+
+    header {
+      background-color: #0077cc;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+      background-color: #005fa3;
+    }
+
+    nav ul li {
+      margin: 0 15px;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    main {
+      padding: 20px;
+      max-width: 100%;
+      margin: auto;
+      overflow-x: auto;
+    }
+
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: auto;
+    }
+
+    form h3 {
+      margin-bottom: 15px;
+    }
+
+    label {
+      margin-top: 10px;
+      display: block;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      background: #0077cc;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #005fa3;
+    }
+
+    .class-section {
+      margin-top: 40px;
+    }
+
+    .class-section h3 {
+      background-color: #005fa3;
+      color: white;
+      padding: 10px;
+      margin-bottom: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      background: white;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #0077cc;
+      color: white;
+    }
+
+    footer {
+      background-color: #ddd;
+      text-align: center;
+      padding: 15px;
+      margin-top: 30px;
+    }
   </style>
 </head>
 <body>
-  <header><h1>HCS Payroll Module</h1></header>
-  <nav>
-    <a href="index.html">Dashboard</a>
-    <a href="students.html">Students</a>
-    <a href="receipts.html">Receipts</a>
-    <a href="expense.html">Expenses</a>
-    <a href="assets.html">Assets</a>
-    <a href="staff.html">Staff</a>
-    <a href="payroll.html">Payroll</a>
-  </nav>
 
-  <div class="container">
-    <button onclick="downloadPayrollPDF()">Download Consolidated PDF</button>
-    <table id="payrollTable">
-      <thead>
-        <tr>
-          <th>Name</th><th>Gross Pay</th><th>PAYE</th><th>NSSF</th><th>SHIF</th><th>AHL</th><th>Advance</th>
-          <th>Total Deductions</th><th>Net Pay</th><th>NSSF - Employers</th><th>AHL - Employers</th><th>NITA</th><th>Payslip</th>
-        </tr>
-      </thead>
-      <tbody id="payrollBody"></tbody>
-    </table>
+  <header>
+    <h1>Heriwadi Christian Schools Ltd</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">Dashboard</a></li>
+        <li><a href="receipts.html">Receipts</a></li>
+        <li><a href="expense.html">Expenses</a></li>
+        <li><a href="assets.html">Assets</a></li>
+        <li><a href="staff.html">Staff</a></li>
+        <li><a href="students.html">Students</a></li>
+        <a href="payroll.html" style="text-decoration: underline;">Payroll</a>
+      </ul>
+    </nav>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  </header>
+
+  <main>
+    <form id="studentForm">
+      <h3>Register Student</h3>
+
+      <label for="studentName">Student Name:</label>
+      <input type="text" id="studentName" required>
+
+      <label for="studentClass">Class:</label>
+      <select id="studentClass" required>
+        <option value="">Select Class</option>
+        <option value="Play Group">Play Group</option>
+        <option value="PP1">PP1</option>
+        <option value="PP2">PP2</option>
+        <option value="Grade 1">Grade 1</option>
+        <option value="Grade 2">Grade 2</option>
+        <option value="Grade 3">Grade 3</option>
+        <option value="Grade 4">Grade 4</option>
+        <option value="Grade 5">Grade 5</option>
+        <option value="Grade 6">Grade 6</option>
+      </select>
+
+      <label for="phone">Phone Number:</label>
+      <input type="tel" id="phone" placeholder="e.g., +254712345678" pattern="^\+?[1-9]\d{9,14}$" required>
+
+      <label>Tuition Fee:</label><input type="number" id="tuition">
+      <label>Adm Fee:</label><input type="number" id="adm">
+      <label>Book Fund:</label><input type="number" id="books">
+      <label>Stationery:</label><input type="number" id="stationery">
+      <label>Uniform:</label><input type="number" id="uniform">
+      <label>Lunch:</label><input type="number" id="lunch">
+      <label>Transport:</label><input type="number" id="transport">
+      <label>Amount Paid:</label><input type="number" id="paid">
+
+      <button type="submit">Add Student</button>
+    </form>
+
+    <div style="margin: 20px auto; max-width: 800px; display: flex; flex-wrap: wrap; gap: 10px;">
+  <input type="text" id="searchInput" placeholder="Search by name..." style="flex:1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+  <select id="classFilter" style="padding: 10px; border-radius: 5px;">
+    <option value="">Filter by Class</option>
+    <option value="Play Group">Play Group</option>
+    <option value="PP1">PP1</option>
+    <option value="PP2">PP2</option>
+    <option value="Grade 1">Grade 1</option>
+    <option value="Grade 2">Grade 2</option>
+    <option value="Grade 3">Grade 3</option>
+    <option value="Grade 4">Grade 4</option>
+    <option value="Grade 5">Grade 5</option>
+    <option value="Grade 6">Grade 6</option>
+  </select>
+</div>
+<div style="max-width:800px; margin:auto;">
+  <button onclick="exportToExcel()" style="background:green;color:white;padding:10px;margin-top:10px;border:none;border-radius:5px;">
+    Export All Students to Excel
+  </button>
+</div>
+
+<!-- Student Detail Modal -->
+<div id="studentModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;">
+  <div style="background:#fff;padding:20px;border-radius:10px;max-width:500px;position:relative;">
+    <span onclick="closeModal()" style="position:absolute;top:10px;right:15px;font-weight:bold;cursor:pointer;">×</span>
+    <h3>Student Details</h3>
+    <div id="modalContent"></div>
   </div>
+</div>
 
-<script>
-function recalculateRow(row) {
-  const gross = parseFloat(row.querySelector(".gross").value) || 0;
-  const paye = parseFloat(row.querySelector(".paye").value) || 0;
-  const nssf = parseFloat(row.querySelector(".nssf").value) || 0;
-  const shif = parseFloat(row.querySelector(".shif").value) || 0;
-  const ahl = parseFloat(row.querySelector(".ahl").value) || 0;
-  const advance = parseFloat(row.querySelector(".advance").value) || 0;
+    <div id="groupedTables"></div>
+  </main>
 
-  const total = paye + nssf + shif + ahl + advance;
-  const net = gross - total;
-  const nssfEmp = gross * 0.06;
-  const ahlEmp = gross * 0.03;
-  const nita = gross * 0.01;
+  <footer>
+    <p>© 2025 Heriwadi Christian Schools Ltd</p>
+  </footer>
 
-  row.querySelector(".total").textContent = total.toFixed(2);
-  row.querySelector(".net").textContent = net.toFixed(2);
-  row.querySelector(".nssfEmp").textContent = nssfEmp.toFixed(2);
-  row.querySelector(".ahlEmp").textContent = ahlEmp.toFixed(2);
-  row.querySelector(".nita").textContent = nita.toFixed(2);
-}
+  <script>
+    const form = document.getElementById('studentForm');
+    const groupedTables = document.getElementById('groupedTables');
+    let editingIndex = null;
 
-function loadPayroll() {
-  const staffList = JSON.parse(localStorage.getItem("staffList") || "[]");
-  const tbody = document.getElementById("payrollBody");
-  tbody.innerHTML = "";
+    const classes = [
+      "Play Group", "PP1", "PP2",
+      "Grade 1", "Grade 2", "Grade 3",
+      "Grade 4", "Grade 5", "Grade 6"
+    ];
 
-  staffList.forEach(staff => {
-    const row = document.createElement("tr");
-    const gross = staff.salary || 0;
-    const advance = staff.advance || 0;
+    // Add the sendSMS function
+    async function sendSMS(phone, message) {
+      const apiKey = 'YOUR_CELCOMAFRICA_API_KEY'; // Replace with your actual API key
+      const url = 'https://api.celcomafrica.com/version1/messaging'; // Confirm exact endpoint with CelcomAfrica
 
-    const paye = gross * 0.1;
-    const nssf = gross * 0.06;
-    const shif = gross * 0.025;
-    const ahl = gross * 0.03;
+      const payload = {
+        to: phone,
+        message: message,
+        from: 'YOUR_SENDER_ID' // Replace with your registered sender ID
+      };
 
-    row.innerHTML = `
-      <td>${staff.fullName}</td>
-      <td><input class="gross" type="number" value="${gross.toFixed(2)}" /></td>
-      <td><input class="paye" type="number" value="${paye.toFixed(2)}" /></td>
-      <td><input class="nssf" type="number" value="${nssf.toFixed(2)}" /></td>
-      <td><input class="shif" type="number" value="${shif.toFixed(2)}" /></td>
-      <td><input class="ahl" type="number" value="${ahl.toFixed(2)}" /></td>
-      <td><input class="advance" type="number" value="${advance.toFixed(2)}" /></td>
-      <td class="total"></td>
-      <td class="net"></td>
-      <td class="nssfEmp"></td>
-      <td class="ahlEmp"></td>
-      <td class="nita"></td>
-      <td><button class="payslipBtn">Print</button></td>
-    `;
-
-    tbody.appendChild(row);
-    recalculateRow(row);
-
-    row.querySelectorAll("input").forEach(input => {
-      input.addEventListener("input", () => recalculateRow(row));
-    });
-
-    row.querySelector(".payslipBtn").addEventListener("click", () => {
-      const name = staff.fullName;
-      const gross = parseFloat(row.querySelector(".gross").value) || 0;
-      const paye = parseFloat(row.querySelector(".paye").value) || 0;
-      const nssf = parseFloat(row.querySelector(".nssf").value) || 0;
-      const shif = parseFloat(row.querySelector(".shif").value) || 0;
-      const ahl = parseFloat(row.querySelector(".ahl").value) || 0;
-      const advance = parseFloat(row.querySelector(".advance").value) || 0;
-      const total = paye + nssf + shif + ahl + advance;
-      const net = gross - total;
-      const nssfEmp = gross * 0.06;
-      const ahlEmp = gross * 0.03;
-      const nita = gross * 0.01;
-
-      const win = window.open("", "Payslip", "width=800,height=600");
-      win.document.write(`
-        <h2>Payslip</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Gross Pay:</strong> ${gross.toFixed(2)}</p>
-        <p><strong>PAYE:</strong> ${paye.toFixed(2)}</p>
-        <p><strong>NSSF:</strong> ${nssf.toFixed(2)}</p>
-        <p><strong>SHIF:</strong> ${shif.toFixed(2)}</p>
-        <p><strong>AHL:</strong> ${ahl.toFixed(2)}</p>
-        <p><strong>Advance:</strong> ${advance.toFixed(2)}</p>
-        <p><strong>Total Deductions:</strong> ${total.toFixed(2)}</p>
-        <p><strong>Net Pay:</strong> ${net.toFixed(2)}</p>
-        <p><strong>NSSF - Employer:</strong> ${nssfEmp.toFixed(2)}</p>
-        <p><strong>AHL - Employer:</strong> ${ahlEmp.toFixed(2)}</p>
-        <p><strong>NITA:</strong> ${nita.toFixed(2)}</p>
-      `);
-      win.print();
-      win.document.close();
-    });
-  });
-}
-
-function downloadPayrollPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(12);
-  doc.text("Consolidated Payroll Report", 70, 15);
-
-  const headers = ["Name", "Gross", "PAYE", "NSSF", "SHIF", "AHL", "Advance", "Total", "Net", "NSSF-Empl", "AHL-Empl", "NITA"];
-  let y = 25;
-
-  doc.setFont("helvetica", "bold");
-  headers.forEach((h, i) => {
-    doc.text(h, 10 + i * 15, y);
-  });
-
-  y += 6;
-  doc.setFont("helvetica", "normal");
-
-  document.querySelectorAll("#payrollBody tr").forEach(row => {
-    const cols = Array.from(row.querySelectorAll("td")).map(td => {
-      const input = td.querySelector("input");
-      return input ? input.value : td.textContent.trim();
-    });
-
-    cols.slice(0, 12).forEach((val, i) => {
-      doc.text(val, 10 + i * 15, y);
-    });
-
-    y += 6;
-    if (y > 270) {
-      doc.addPage();
-      y = 25;
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'apiKey': apiKey
+          },
+          body: new URLSearchParams(payload)
+        });
+        const data = await response.json();
+        console.log('SMS sent:', data);
+      } catch (error) {
+        console.error('SMS Error:', error);
+      }
     }
-  });
 
-  doc.save("Consolidated_Payroll_Report.pdf");
- }
+    function loadStudents() {
+      const students = JSON.parse(localStorage.getItem('students')) || [];
+      groupedTables.innerHTML = '';
 
- window.onload = loadPayroll;
-</script>
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+      const classFilter = document.getElementById('classFilter').value;
+
+      classes.forEach(cls => {
+        let filtered = students.filter(s => s.class === cls);
+
+        if (classFilter && cls !== classFilter) return;
+
+        if (searchQuery) {
+          filtered = filtered.filter(s => s.name.toLowerCase().includes(searchQuery));
+        }
+
+        if (filtered.length === 0) return;
+
+        const section = document.createElement('div');
+        section.className = 'class-section';
+        section.innerHTML = `<h3>${cls}</h3>`;
+
+        const table = document.createElement('table');
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Tuition</th>
+              <th>Adm</th>
+              <th>Books</th>
+              <th>Stationery</th>
+              <th>Uniform</th>
+              <th>Lunch</th>
+              <th>Transport</th>
+              <th>Total</th>
+              <th>Paid</th>
+              <th>Balance</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        `;
+
+        const tbody = table.querySelector('tbody');
+
+        filtered.forEach((s, index) => {
+          const realIndex = students.findIndex(std => JSON.stringify(std) === JSON.stringify(s));
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><a href="#" onclick="viewStudent(${realIndex})">${s.name}</a></td>
+            <td>${s.tuition}</td>
+            <td>${s.adm}</td>
+            <td>${s.books}</td>
+            <td>${s.stationery}</td>
+            <td>${s.uniform}</td>
+            <td>${s.lunch}</td>
+            <td>${s.transport}</td>
+            <td>KES ${s.total.toFixed(2)}</td>
+            <td>KES ${s.paid.toFixed(2)}</td>
+            <td>KES ${s.balance.toFixed(2)}</td>
+            <td>
+              <button onclick="editStudent(${realIndex})">Edit</button>
+              <button onclick="deleteStudent(${realIndex})" style="background:red;color:white;">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        section.appendChild(table);
+        groupedTables.appendChild(section);
+      });
+    }
+
+    function editStudent(index) {
+      const students = JSON.parse(localStorage.getItem('students')) || [];
+      const s = students[index];
+      editingIndex = index;
+
+      document.getElementById('studentName').value = s.name;
+      document.getElementById('studentClass').value = s.class;
+      document.getElementById('phone').value = s.phone || '';
+      document.getElementById('tuition').value = s.tuition;
+      document.getElementById('adm').value = s.adm;
+      document.getElementById('books').value = s.books;
+      document.getElementById('stationery').value = s.stationery;
+      document.getElementById('uniform').value = s.uniform;
+      document.getElementById('lunch').value = s.lunch;
+      document.getElementById('transport').value = s.transport;
+      document.getElementById('paid').value = s.paid;
+
+      form.querySelector('button[type="submit"]').textContent = "Save Changes";
+    }
+
+    function deleteStudent(index) {
+      const students = JSON.parse(localStorage.getItem('students')) || [];
+      if (confirm(`Delete ${students[index].name}?`)) {
+        students.splice(index, 1);
+        localStorage.setItem('students', JSON.stringify(students));
+        loadStudents();
+      }
+    }
+
+    // Update the form submission
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('studentName').value;
+      const studentClass = document.getElementById('studentClass').value;
+      const phone = document.getElementById('phone').value;
+      const tuition = parseFloat(document.getElementById('tuition').value) || 0;
+      const adm = parseFloat(document.getElementById('adm').value) || 0;
+      const books = parseFloat(document.getElementById('books').value) || 0;
+      const stationery = parseFloat(document.getElementById('stationery').value) || 0;
+      const uniform = parseFloat(document.getElementById('uniform').value) || 0;
+      const lunch = parseFloat(document.getElementById('lunch').value) || 0;
+      const transport = parseFloat(document.getElementById('transport').value) || 0;
+      const paid = parseFloat(document.getElementById('paid').value) || 0;
+
+      const total = tuition + adm + books + stationery + uniform + lunch + transport;
+      const balance = total - paid;
+
+      const student = { name, class: studentClass, phone, tuition, adm, books, stationery, uniform, lunch, transport, total, paid, balance };
+
+      const students = JSON.parse(localStorage.getItem('students')) || [];
+
+      if (editingIndex !== null) {
+        students[editingIndex] = student;
+        editingIndex = null;
+        form.querySelector('button[type="submit"]').textContent = "Add Student";
+      } else {
+        students.push(student);
+        // Send SMS for new student
+        sendSMS(phone, `Hello ${name}, you have been registered at Heriwadi Christian Schools. Total Fee: KES ${total}, Paid: KES ${paid}, Balance: KES ${balance}.`);
+      }
+
+      localStorage.setItem('students', JSON.stringify(students));
+      form.reset();
+      loadStudents();
+    });
+
+    document.getElementById('searchInput').addEventListener('input', loadStudents);
+    document.getElementById('classFilter').addEventListener('change', loadStudents);
+
+    loadStudents();
+    function exportToExcel() {
+      const students = JSON.parse(localStorage.getItem('students')) || [];
+      if (students.length === 0) {
+        alert("No student data available to export.");
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(students);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+
+      XLSX.writeFile(workbook, "students_report.xlsx");
+    }
+    function viewStudent(index) {
+      const students = JSON.parse(localStorage.getItem('students')) || [];
+      const s = students[index];
+
+      const modal = document.getElementById('studentModal');
+      const content = document.getElementById('modalContent');
+
+      content.innerHTML = `
+        <p><strong>Name:</strong> ${s.name}</p>
+        <p><strong>Class:</strong> ${s.class}</p>
+        <p><strong>Tuition:</strong> KES ${s.tuition}</p>
+        <p><strong>Adm Fee:</strong> KES ${s.adm}</p>
+        <p><strong>Book Fund:</strong> KES ${s.books}</p>
+        <p><strong>Stationery:</strong> KES ${s.stationery}</p>
+        <p><strong>Uniform:</strong> KES ${s.uniform}</p>
+        <p><strong>Lunch:</strong> KES ${s.lunch}</p>
+        <p><strong>Transport:</strong> KES ${s.transport}</p>
+        <p><strong>Total Fee:</strong> <strong style="color:blue">KES ${s.total}</strong></p>
+        <p><strong>Amount Paid:</strong> <strong style="color:green">KES ${s.paid}</strong></p>
+        <p><strong>Balance:</strong> <strong style="color:red">KES ${s.balance}</strong></p>
+      `;
+
+      modal.style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById('studentModal').style.display = "none";
+    }
+  </script>
 </body>
 </html>
