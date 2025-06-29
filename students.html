@@ -265,84 +265,39 @@
       }
     }
 
-    function loadStudents() {
-      // Use the same localStorage key as receipts.html
-      const students = JSON.parse(localStorage.getItem('students')) || [];
-      groupedTables.innerHTML = '';
-
-      const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-      const classFilter = document.getElementById('classFilter').value;
-
-      classes.forEach(cls => {
-        let filtered = students.filter(s => s.class === cls);
-
-        if (classFilter && cls !== classFilter) return;
-
-        if (searchQuery) {
-          filtered = filtered.filter(s => s.name.toLowerCase().includes(searchQuery));
-        }
-
-        if (filtered.length === 0) return;
-
-        const section = document.createElement('div');
-        section.className = 'class-section';
-        section.innerHTML = `<h3>${cls}</h3>`;
-
-        const table = document.createElement('table');
-        table.innerHTML = `
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Tuition</th>
-              <th>Adm</th>
-              <th>Books</th>
-              <th>Stationery</th>
-              <th>Uniform</th>
-              <th>Lunch</th>
-              <th>Transport</th>
-              <th>Total</th>
-              <th>Paid</th>
-              <th>Balance</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        `;
-
-        const tbody = table.querySelector('tbody');
-
-        filtered.forEach((s, index) => {
-          const realIndex = students.findIndex(std => JSON.stringify(std) === JSON.stringify(s));
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td><a href="#" onclick="viewStudent(${realIndex})">${s.name}</a></td>
-            <td>${s.phone || 'N/A'}</td>
-            <td>KES ${s.tuition.toFixed(2)}</td>
-            <td>KES ${s.adm.toFixed(2)}</td>
-            <td>KES ${s.books.toFixed(2)}</td>
-            <td>KES ${s.stationery.toFixed(2)}</td>
-            <td>KES ${s.uniform.toFixed(2)}</td>
-            <td>KES ${s.lunch.toFixed(2)}</td>
-            <td>KES ${s.transport.toFixed(2)}</td>
-            <td><strong>KES ${s.total.toFixed(2)}</strong></td>
-            <td style="color: green;"><strong>KES ${s.paid.toFixed(2)}</strong></td>
-            <td style="color: ${s.balance > 0 ? 'red' : 'green'};"><strong>KES ${s.balance.toFixed(2)}</strong></td>
-            <td>
-              <button onclick="editStudent(${realIndex})" style="margin-right: 5px;">Edit</button>
-              <button onclick="deleteStudent(${realIndex})" style="background:red;color:white;">Delete</button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-
-        section.appendChild(table);
-        groupedTables.appendChild(section);
-      });
-
-      // Update summary statistics
-      updateSummaryStats(students);
-    }
+     function loadStudents() {
+  const students = JSON.parse(localStorage.getItem('students')) || [];
+  groupedTables.innerHTML = '';
+  const table = document.createElement('table');
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Phone</th>
+        <th>Tuition</th>
+        <th>Paid</th>
+        <th>Balance</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  const tbody = table.querySelector('tbody');
+  students.forEach((s, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${s.name || 'N/A'}</td>
+      <td>${s.class || 'N/A'}</td>
+      <td>${s.phone || 'N/A'}</td>
+      <td>KES ${s.tuition || 0}</td>
+      <td>KES ${s.paid || 0}</td>
+      <td>KES ${s.balance || 0}</td>
+    `;
+    tbody.appendChild(row);
+  });
+  groupedTables.appendChild(table);
+  updateSummaryStats(students);
+}
 
     function updateSummaryStats(students) {
       const totalStudents = students.length;
