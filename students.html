@@ -265,37 +265,97 @@
       }
     }
 
-     function loadStudents() {
+    function loadStudents() {
   const students = JSON.parse(localStorage.getItem('students')) || [];
   groupedTables.innerHTML = '';
-  const table = document.createElement('table');
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Class</th>
-        <th>Phone</th>
-        <th>Tuition</th>
-        <th>Paid</th>
-        <th>Balance</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  `;
-  const tbody = table.querySelector('tbody');
-  students.forEach((s, index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${s.name || 'N/A'}</td>
-      <td>${s.class || 'N/A'}</td>
-      <td>${s.phone || 'N/A'}</td>
-      <td>KES ${s.tuition || 0}</td>
-      <td>KES ${s.paid || 0}</td>
-      <td>KES ${s.balance || 0}</td>
+
+  const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+  const classFilter = document.getElementById('classFilter').value;
+
+  classes.forEach(cls => {
+    let filtered = students.filter(s => s.class === cls);
+
+    if (classFilter && cls !== classFilter) return;
+
+    if (searchQuery) {
+      filtered = filtered.filter(s => s.name.toLowerCase().includes(searchQuery));
+    }
+
+    if (filtered.length === 0) return;
+
+    const section = document.createElement('div');
+    section.className = 'class-section';
+    section.innerHTML = `<h3>${cls}</h3>`;
+
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Tuition</th>
+          <th>Adm</th>
+          <th>Books</th>
+          <th>Stationery</th>
+          <th>Uniform</th>
+          <th>Lunch</th>
+          <th>Transport</th>
+          <th>Total</th>
+          <th>Paid</th>
+          <th>Balance</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
     `;
-    tbody.appendChild(row);
+
+    const tbody = table.querySelector('tbody');
+
+    filtered.forEach((s, index) => {
+      // Ensure all fields are present, use defaults if missing
+      const student = {
+        name: s.name || 'Unknown',
+        class: s.class || 'N/A',
+        phone: s.phone || 'N/A',
+        tuition: s.tuition || 0,
+        adm: s.adm || 0,
+        books: s.books || 0,
+        stationery: s.stationery || 0,
+        uniform: s.uniform || 0,
+        lunch: s.lunch || 0,
+        transport: s.transport || 0,
+        total: s.total || (s.tuition + s.adm + s.books + s.stationery + s.uniform + s.lunch + s.transport),
+        paid: s.paid || 0,
+        balance: s.balance || (s.total - s.paid)
+      };
+
+      const realIndex = students.findIndex(std => JSON.stringify(std) === JSON.stringify(s));
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><a href="#" onclick="viewStudent(${realIndex})">${student.name}</a></td>
+        <td>${student.phone}</td>
+        <td>KES ${student.tuition.toFixed(2)}</td>
+        <td>KES ${student.adm.toFixed(2)}</td>
+        <td>KES ${student.books.toFixed(2)}</td>
+        <td>KES ${student.stationery.toFixed(2)}</td>
+        <td>KES ${student.uniform.toFixed(2)}</td>
+        <td>KES ${student.lunch.toFixed(2)}</td>
+        <td>KES ${student.transport.toFixed(2)}</td>
+        <td><strong>KES ${student.total.toFixed(2)}</strong></td>
+        <td style="color: green;"><strong>KES ${student.paid.toFixed(2)}</strong></td>
+        <td style="color: ${student.balance > 0 ? 'red' : 'green'};"><strong>KES ${student.balance.toFixed(2)}</strong></td>
+        <td>
+          <button onclick="editStudent(${realIndex})" style="margin-right: 5px;">Edit</button>
+          <button onclick="deleteStudent(${realIndex})" style="background:red;color:white;">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    section.appendChild(table);
+    groupedTables.appendChild(section);
   });
-  groupedTables.appendChild(table);
+
   updateSummaryStats(students);
 }
 
