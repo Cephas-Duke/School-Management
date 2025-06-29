@@ -83,26 +83,27 @@
   <!-- Student Manager Modal -->
   <div id="studentManagerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:9999;">
     <div style="background:#fff; padding:20px; border-radius:10px; width:90%; max-width:600px; position:relative; max-height:90vh; overflow-y:auto;">
-      <span onclick="closeStudentManager()" style="position:absolute; top:10px; right:20px; font-size:18px; cursor:pointer;">&times;</span>
+      <span onclick="closeStudentManager()" style="position:absolute; top:10px; right:20px; font-size:18px; cursor:pointer;">×</span>
       <h3>Add New Student</h3>
-   <form id="studentForm">
-     <label>Name:</label><input type="text" id="studentName" required>
-     <label>Class:</label><input type="text" id="studentClass" required>  <!-- Changed from studentClassInput -->
-     <label>Phone:</label><input type="text" id="phone" required>  <!-- Changed from studentPhone -->
-     <label>Tuition:</label><input type="number" id="tuition" value="0">  <!-- Changed from tuitionInput -->
-     <label>Adm Fee:</label><input type="number" id="adm" value="0">  <!-- Changed from admInput -->
-     <label>Book Fund:</label><input type="number" id="books" value="0">  <!-- Changed from booksInput -->
-     <label>Stationery:</label><input type="number" id="stationery" value="0">  <!-- Changed from stationeryInput -->
-     <label>Uniform:</label><input type="number" id="uniform" value="0">  <!-- Changed from uniformInput -->
-     <label>Lunch:</label><input type="number" id="lunch" value="0">  <!-- Changed from lunchInput -->
-     <label>Transport:</label><input type="number" id="transport" value="0">  <!-- Changed from transportInput -->
-     <button type="submit">Add Student</button>
-   </form>
+      <form id="studentForm">
+        <label>Name:</label><input type="text" id="studentName" required>
+        <label>Class:</label><input type="text" id="studentClass" required>
+        <label>Phone:</label><input type="text" id="phone" required>
+        <label>Tuition:</label><input type="number" id="tuition" value="0">
+        <label>Adm Fee:</label><input type="number" id="adm" value="0">
+        <label>Book Fund:</label><input type="number" id="books" value="0">
+        <label>Stationery:</label><input type="number" id="stationery" value="0">
+        <label>Uniform:</label><input type="number" id="uniform" value="0">
+        <label>Lunch:</label><input type="number" id="lunch" value="0">
+        <label>Transport:</label><input type="number" id="transport" value="0">
+        <button type="submit">Add Student</button>
+      </form>
       <hr>
       <ul id="studentList"></ul>
     </div>
   </div>
-   <script>
+
+  <script>
     let students = JSON.parse(localStorage.getItem("students")) || [];
     let receipts = JSON.parse(localStorage.getItem("receipts")) || [];
 
@@ -157,7 +158,7 @@
       });
     }
 
-    // Receipt form submission with server integration
+    // Updated receipt form submission
     document.getElementById("receiptForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       
@@ -169,7 +170,7 @@
 
       const amount = parseFloat(document.getElementById("amountPaid").value);
       const mode = document.getElementById("paymentMode").value;
-      const student = students[idx];
+      let student = students[idx];
 
       if (amount <= 0) {
         showStatus("Amount must be greater than 0", "error");
@@ -182,9 +183,12 @@
       showStatus("Processing payment and sending SMS...", "loading");
 
       try {
-        // Update student data
-        student.paid += amount;
-        student.balance = student.total - student.paid;
+        // Update student data while preserving all fields
+        student = {
+          ...student, // Preserve all existing fields
+          paid: (student.paid || 0) + amount,
+          balance: (student.total || 0) - ((student.paid || 0) + amount)
+        };
 
         // Create receipt
         const receipt = { 
@@ -198,6 +202,9 @@
         };
         
         receipts.push(receipt);
+        
+        // Update students array with the full student object
+        students[idx] = student;
         
         // Save to localStorage
         localStorage.setItem("students", JSON.stringify(students));
@@ -230,7 +237,6 @@
         console.error("Error processing receipt:", error);
         showStatus(`Error: ${error.message}. Receipt may not have been saved.`, "error");
       } finally {
-        // Re-enable submit button
         submitBtn.disabled = false;
         submitBtn.textContent = "Save Receipt & Send SMS";
       }
@@ -246,51 +252,49 @@
       document.getElementById("studentManagerModal").style.display = "none";
     }
 
-    // Replace the student form submission JavaScript in receipts.html with this:
+    document.getElementById("studentForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById("studentName").value.trim();
+      const sclass = document.getElementById("studentClass").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const tuition = +document.getElementById("tuition").value;
+      const adm = +document.getElementById("adm").value;
+      const books = +document.getElementById("books").value;
+      const stationery = +document.getElementById("stationery").value;
+      const uniform = +document.getElementById("uniform").value;
+      const lunch = +document.getElementById("lunch").value;
+      const transport = +document.getElementById("transport").value;
+      
+      if (!name || !sclass || !phone) {
+        alert("Please fill in all required fields (Name, Class, Phone)");
+        return;
+      }
 
-document.getElementById("studentForm").addEventListener("submit", function(e) {
-  e.preventDefault();
-  
-  const name = document.getElementById("studentName").value.trim();
-  const sclass = document.getElementById("studentClass").value.trim(); // Changed from studentClassInput
-  const phone = document.getElementById("phone").value.trim(); // Changed from studentPhone
-  const tuition = +document.getElementById("tuition").value; // Changed from tuitionInput
-  const adm = +document.getElementById("adm").value; // Changed from admInput
-  const books = +document.getElementById("books").value; // Changed from booksInput
-  const stationery = +document.getElementById("stationery").value; // Changed from stationeryInput
-  const uniform = +document.getElementById("uniform").value; // Changed from uniformInput
-  const lunch = +document.getElementById("lunch").value; // Changed from lunchInput
-  const transport = +document.getElementById("transport").value; // Changed from transportInput
-  
-  if (!name || !sclass || !phone) {
-    alert("Please fill in all required fields (Name, Class, Phone)");
-    return;
-  }
-
-  const total = tuition + adm + books + stationery + uniform + lunch + transport;
-  const newStudent = { 
-    name, 
-    class: sclass, 
-    phone, 
-    tuition, 
-    adm, 
-    books, 
-    stationery, 
-    uniform, 
-    lunch, 
-    transport, 
-    total, 
-    paid: 0, 
-    balance: total 
-  };
-  
-  students.push(newStudent);
-  localStorage.setItem("students", JSON.stringify(students));
-  this.reset();
-  renderStudentList();
-  populateStudents();
-  showStatus(`Student ${name} added successfully!`, "success");
-});
+      const total = tuition + adm + books + stationery + uniform + lunch + transport;
+      const newStudent = { 
+        name, 
+        class: sclass, 
+        phone, 
+        tuition, 
+        adm, 
+        books, 
+        stationery, 
+        uniform, 
+        lunch, 
+        transport, 
+        total, 
+        paid: 0, 
+        balance: total 
+      };
+      
+      students.push(newStudent);
+      localStorage.setItem("students", JSON.stringify(students));
+      this.reset();
+      renderStudentList();
+      populateStudents();
+      showStatus(`Student ${name} added successfully!`, "success");
+    });
 
     function renderStudentList() {
       const list = document.getElementById("studentList");
